@@ -1,0 +1,34 @@
+:root {
+  --primary: #e50914;
+  --primary-hover: #ff2430;
+  --background: #09090b;
+  --surface: #111116;
+  --surface-elevated: #18181f;
+  --border: #292930;
+  --text-primary: #f8f8fa;
+  --text-secondary: #a1a1aa;
+  --success: #22c55e;
+  --warning: #f5b700;
+  --rumor: #a855f7;
+  --leak: #f97316;
+  --destructive: #ef4444;
+  --font-app:
+    "Inter", "Segoe UI", "Helvetica Neue", Arial, system-ui, sans-serif;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-border: var(--border);
+  --color-foreground: var(--text-primary);
+  --color-secondary: var(--text-secondary);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-rumor: var(--rumor);
+  --color-leak: var(--leak);
+  --color-destructive: var(--destructive);
+  --font-sans: var(--font-app);
+}

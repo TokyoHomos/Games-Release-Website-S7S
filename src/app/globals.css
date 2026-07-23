@@ -1,0 +1,50 @@
+@import "tailwindcss";
+@import "../styles/theme.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 50% -20%, rgb(229 9 20 / 12%), transparent 34rem),
+    var(--background);
+  color: var(--text-primary);
+  font-family: var(--font-app);
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+a {
+  text-underline-offset: 0.2em;
+}
+
+.container-shell {
+  width: min(100% - 2rem, 75rem);
+  margin-inline: auto;
+}
+
+.page-section {
+  padding-block: clamp(3.5rem, 8vw, 7rem);
+}
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--primary);
+}
