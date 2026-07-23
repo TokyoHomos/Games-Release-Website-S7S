@@ -25,6 +25,7 @@ export function ReleaseCalendarSection() {
   return (
     <section aria-labelledby="release-calendar-heading">
       <SectionHeading
+        headingId="release-calendar-heading"
         eyebrow="This month"
         title="Release calendar"
         description="Launches, showcases, and updates worth planning around."

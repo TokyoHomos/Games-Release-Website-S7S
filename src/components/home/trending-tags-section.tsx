@@ -24,7 +24,11 @@ export function TrendingTagsSection() {
   return (
     <section aria-labelledby="trending-tags-heading" className="grid gap-10">
       <div>
-        <SectionHeading eyebrow="Discover" title="Trending tags" />
+        <SectionHeading
+          headingId="trending-tags-heading"
+          eyebrow="Discover"
+          title="Trending tags"
+        />
         <ul className="mt-5 flex flex-wrap gap-2">
           {genreCounts.map(({ genre, count }) => (
             <li key={genre.id}>

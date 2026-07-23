@@ -31,6 +31,7 @@ export function AnticipatedGamesSection() {
   return (
     <section aria-labelledby="anticipated-games-heading">
       <SectionHeading
+        headingId="anticipated-games-heading"
         eyebrow="Most anticipated"
         title="Games everyone is watching"
         description="Upcoming titles ranked by development stage and community interest."

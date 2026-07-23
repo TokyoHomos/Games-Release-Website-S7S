@@ -32,6 +32,7 @@ export function ReleasingTodaySection() {
   return (
     <section aria-labelledby="releasing-today-heading">
       <SectionHeading
+        headingId="releasing-today-heading"
         eyebrow="Today"
         title="Releasing today"
         description="Confirmed launches landing on their release day."

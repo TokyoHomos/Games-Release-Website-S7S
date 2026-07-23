@@ -1,10 +1,11 @@
 import type { ReactNode } from "react";
 
-interface SectionHeadingProps {
+export interface SectionHeadingProps {
   eyebrow: string;
   title: string;
   description?: string;
   action?: ReactNode;
+  headingId?: string;
 }
 
 export function SectionHeading({
@@ -12,6 +13,7 @@ export function SectionHeading({
   title,
   description,
   action,
+  headingId,
 }: SectionHeadingProps) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-4">
@@ -19,7 +21,10 @@ export function SectionHeading({
         <p className="text-primary text-xs font-bold tracking-[0.16em] uppercase">
           {eyebrow}
         </p>
-        <h2 className="mt-2 text-2xl font-black tracking-tight text-balance sm:text-3xl">
+        <h2
+          id={headingId}
+          className="mt-2 text-2xl font-black tracking-tight text-balance sm:text-3xl"
+        >
           {title}
         </h2>
         {description ? (

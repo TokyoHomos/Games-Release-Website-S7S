@@ -1,14 +1,15 @@
-# Kimi Reusable Component Specification
+# Kimi Component Specification — Milestone 1C
 
-## Purpose
+## Purpose and scope
 
-This specification defines Kimi's component-only contribution for the combined
-Milestone 1 repository. Claude's homepage is the visual and behavioral source of
-truth. Kimi should extract repeated presentation into typed components without
-redesigning the page, changing mock data, or moving route responsibilities.
+This document defines Kimi's first reusable component batch for GameSignal.
+Claude's homepage is the visual and behavioral source of truth. Kimi should
+extract reusable presentation without redesigning the page, changing route
+ownership, duplicating domain models, or importing global mock arrays into
+presentational components.
 
-Kimi's branch should **add only the files listed below**. The lead integrator
-will replace Claude's inline markup after reviewing Kimi's components.
+Kimi should create only the five component files specified below. The Lead
+Engineer will integrate them into the existing homepage after review.
 
 ## Existing contracts to reuse
 
@@ -17,28 +18,23 @@ Import domain models from `@/types`:
 - `Game`
 - `GameRelease`
 - `Platform`
-- `Genre`
-- `GameStatus`
-- `ReleaseStatus`
 - `NewsArticle`
-- `Favorite`
-- `CalendarEvent`
-- `CalendarEventType`
+- `CredibilityAssessment`
+- `CredibilityVerdict`
+- `ISODateString`
 
-Import fixtures from `@/data` only in examples, stories, or parent integration
-code. Presentational components must receive data through props and must not
-import the global mock arrays directly.
-
-Reuse these existing components and helpers rather than duplicating them:
+Reuse these existing helpers and components:
 
 - `StatusPill` from `@/components/ui/status-pill`
-- `PageContainer` from `@/components/layout/page-container`
-- `HeroCarousel` from `@/components/home/hero-carousel`
 - `cn` and `formatDate` from `@/lib/utils`
+- Next.js `Link` for navigation; never emulate a link with a click handler
+
+Fixtures from `@/data` may appear in examples or parent integration code only.
+The five presentational components must receive all data through props.
 
 ## Theme and styling contract
 
-Use semantic Tailwind classes backed by `src/styles/theme.css`:
+Use the semantic Tailwind classes backed by `src/styles/theme.css`:
 
 - Brand: `bg-primary`, `text-primary`, `hover:bg-primary-hover`
 - Page: `bg-background`, `text-foreground`
@@ -50,593 +46,499 @@ Use semantic Tailwind classes backed by `src/styles/theme.css`:
 - Keyboard focus: `focus-ring`
 - Shared width: `container-shell`
 
-Do not introduce raw copies of the theme colors. A data-provided
-`Platform.color` may be used through an inline `style` because platform colors
-are catalog data, not theme values.
+Do not copy the theme's hex values into component files. A data-provided
+`Platform.color` may be applied with an inline style because it is catalog data,
+not a theme token.
 
-## Required components
+## First reusable component batch
 
-### 1. Shared section heading
+### 1. GameReleaseCard
 
-**File:** `src/components/ui/section-heading.tsx`
+**Filename:** `src/components/games/game-release-card.tsx`
 
-```ts
-import type { ReactNode } from "react";
-
-export interface SectionHeadingProps {
-  eyebrow: string;
-  title: string;
-  description?: string;
-  action?: ReactNode;
-  headingId?: string;
-  className?: string;
-}
-```
-
-Requirements:
-
-- Preserve the current responsive wrapping, typography, spacing, and optional
-  action placement.
-- Apply `headingId` to the `<h2>` when provided.
-- Remain a Server Component.
-- Use `cn` for optional classes.
-
-Later replaces:
-
-- The complete implementation in
-  `src/components/home/section-heading.tsx`.
-- Imports in `anticipated-games-section.tsx`,
-  `personalized-feed-section.tsx`, `release-calendar-section.tsx`,
-  `releasing-today-section.tsx`, and `trending-tags-section.tsx`.
-
-Example:
-
-```tsx
-<SectionHeading
-  headingId="anticipated-games-heading"
-  eyebrow="Most anticipated"
-  title="Games everyone is watching"
-  description="Upcoming titles ranked by development stage."
-/>
-```
-
-Acceptance criteria:
-
-- Optional properties compile with `exactOptionalPropertyTypes`.
-- The action wraps below the copy at narrow widths without overflow.
-- The heading ID can satisfy the owning section's `aria-labelledby`.
-
-### 2. Button and button link
-
-**File:** `src/components/ui/button.tsx`
-
-```ts
-import type {
-  ButtonHTMLAttributes,
-  ComponentPropsWithoutRef,
-  ReactNode,
-} from "react";
-import type Link from "next/link";
-
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "icon";
-
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  icon?: ReactNode;
-}
-
-export interface ButtonLinkProps extends ComponentPropsWithoutRef<typeof Link> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  icon?: ReactNode;
-}
-```
-
-Requirements:
-
-- Export `Button` and `ButtonLink`.
-- Preserve native button and Next.js link semantics; do not implement a
-  click-handler-based pseudo-link.
-- Default button `type` to `"button"` unless explicitly supplied.
-- Include `focus-ring`, disabled styling, and a minimum 40×40 px icon target.
-- Do not add a class-variance dependency.
-
-Later replaces:
-
-- Follow control in `src/components/home/hero-carousel.tsx`.
-- CTA links in `src/components/home/homepage-cta.tsx`.
-- Section action links in `personalized-feed-section.tsx` and
-  `release-calendar-section.tsx`.
-- Clear control in `src/components/games/release-filters.tsx`.
-
-Example:
-
-```tsx
-<Button variant="primary" aria-pressed={false}>
-  Follow release
-</Button>
-
-<ButtonLink href="/calendar" variant="secondary" size="sm">
-  Full calendar
-</ButtonLink>
-```
-
-Acceptance criteria:
-
-- All forwarded native props remain typed.
-- Keyboard focus is visible.
-- Disabled buttons cannot communicate an enabled visual state.
-- Link variants remain crawlable anchors.
-
-### 3. Tag chip
-
-**File:** `src/components/ui/tag-chip.tsx`
+**Purpose:** Present a game and one release record as a reusable launch card for
+the homepage, release listings, and calendar-adjacent views.
 
 ```ts
 import type { ComponentPropsWithoutRef } from "react";
 import type Link from "next/link";
 
-export type TagChipVariant = "default" | "overlay";
-
-export interface TagChipProps {
-  label: string;
-  count?: number;
-  dotColor?: string;
-  href?: ComponentPropsWithoutRef<typeof Link>["href"];
-  variant?: TagChipVariant;
-  className?: string;
-}
-```
-
-Requirements:
-
-- Render a `<span>` without `href` and a Next.js `<Link>` with `href`.
-- Set a decorative color dot to `aria-hidden`.
-- Preserve the compact pill treatment and overlay variant used by the hero.
-- Never construct query strings manually; accept a typed `href` object.
-
-Later replaces:
-
-- Genre spans inside `AnticipatedGamesSection`.
-- Genre spans inside `HeroCarousel`.
-- Genre and platform links inside `TrendingTagsSection`.
-
-Example:
-
-```tsx
-const genre = genres.find((item) => item.id === "genre-rpg")!;
-
-<TagChip
-  label={genre.name}
-  count={2}
-  href={{ pathname: "/releases", query: { genre: genre.slug } }}
-/>;
-```
-
-Acceptance criteria:
-
-- Link and non-link variants are visually consistent.
-- Counts are announced as part of meaningful link text.
-- Overlay contrast remains readable on the hero background.
-
-### 4. Platform badges
-
-**File:** `src/components/games/platform-badges.tsx`
-
-```ts
-import type { Platform } from "@/types";
-
-export interface PlatformBadgesProps {
-  platforms: readonly Platform[];
-  variant?: "inline" | "compact";
-  className?: string;
-  ariaLabel?: string;
-}
-```
-
-Requirements:
-
-- Render a semantic list.
-- Use `Platform.id` as the key and `Platform.shortName` as the visible label.
-- Treat the platform color dot as decorative.
-- Return `null` for an empty list.
-
-Later replaces:
-
-- The `gamePlatforms.map` block in
-  `src/components/home/anticipated-games-section.tsx`.
-- The joined platform text in the hero release details after the integrator
-  passes full `Platform` objects to the presentational layer.
-
-Example:
-
-```tsx
-const game = games.find((item) => item.id === "game-echoes-of-aether")!;
-const supportedPlatforms = platforms.filter((platform) =>
-  game.platformIds.includes(platform.id),
-);
-
-<PlatformBadges platforms={supportedPlatforms} />;
-```
-
-Acceptance criteria:
-
-- No catalog lookup occurs inside the component.
-- Long platform sets wrap without horizontal overflow.
-- The list has an accessible label when used without nearby context.
-
-### 5. Game card
-
-**File:** `src/components/games/game-card.tsx`
-
-```ts
-import type { Game, Genre, Platform } from "@/types";
-
-export interface GameCardProps {
-  game: Game;
-  genres: readonly Genre[];
-  platforms: readonly Platform[];
-  statusTone?: "neutral" | "success" | "warning";
-  href?: string;
-  className?: string;
-}
-```
-
-Requirements:
-
-- Reuse `StatusPill`, `TagChip`, and `PlatformBadges`.
-- Preserve Claude's card height, responsive grid behavior, placeholder artwork,
-  summary, status, genre tags, and platform footer.
-- The outer component must be an `<article>`; the parent owns the `<li>`.
-- If `href` is absent, do not render a fake interactive card.
-
-Later replaces:
-
-- The `<article>` inside `anticipated.map(...)` in
-  `src/components/home/anticipated-games-section.tsx`.
-
-Example:
-
-```tsx
-const game = games.find((item) => item.id === "game-echoes-of-aether")!;
-
-<GameCard
-  game={game}
-  genres={genres.filter((genre) => game.genreIds.includes(genre.id))}
-  platforms={platforms.filter((platform) =>
-    game.platformIds.includes(platform.id),
-  )}
-  statusTone="neutral"
-/>;
-```
-
-Acceptance criteria:
-
-- Uses the existing `Game`, `Genre`, and `Platform` models unchanged.
-- Does not import `games`, `genres`, or `platforms` from `@/data`.
-- Cards in the same CSS grid can stretch to equal height.
-- Missing optional links do not produce dead controls.
-
-### 6. Release card
-
-**File:** `src/components/games/release-card.tsx`
-
-```ts
 import type { Game, GameRelease, Platform } from "@/types";
 
-export interface ReleaseCardProps {
+export type GameReleaseCardVariant = "default" | "compact";
+
+export interface GameReleaseCardProps {
   game: Game;
   release: GameRelease;
-  platforms?: readonly Platform[];
+  platforms: readonly Platform[];
+  href?: ComponentPropsWithoutRef<typeof Link>["href"];
   badgeLabel?: string;
-  tone?: "neutral" | "success" | "warning";
-  compact?: boolean;
+  variant?: GameReleaseCardVariant;
+  showSummary?: boolean;
   className?: string;
 }
 ```
 
-Requirements:
+**Existing shared types:** `Game`, `GameRelease`, and `Platform`.
 
-- Reuse `StatusPill` and `PlatformBadges`.
-- Use `release.releaseWindowLabel` when no exact date is present.
+**Required behavior:**
+
+- Render an `<article>`; the parent owns `<li>` semantics.
+- Use `release.releaseWindowLabel` when an exact date is unavailable.
 - Use `formatDate` for exact dates.
-- The parent owns list semantics.
+- Reuse `StatusPill` for the release state or supplied `badgeLabel`.
+- Render platform labels from the `platforms` prop; do not perform catalog
+  lookups internally.
+- Render a real Next.js link only when `href` is supplied.
+- Preserve the existing rounded surface, semantic border, spacing, and equal
+  height behavior.
 
-Later replaces:
+**Accessibility:**
 
-- The release `<li>` contents in
-  `src/components/home/releasing-today-section.tsx`.
-- A later integrator may also use it in `src/app/releases/page.tsx`; Kimi must
-  not edit that route.
+- The card title must be a heading.
+- Exact dates must use `<time dateTime={release.releaseDate}>`.
+- Platform color dots are decorative and must be `aria-hidden`.
+- A linked title must retain a visible `focus-ring`.
+- The whole card must not become a nested interactive control.
 
-Example:
+**Responsive behavior:**
+
+- No horizontal overflow at 320 px.
+- `default` supports equal-height grid cards.
+- `compact` may switch from stacked to row layout at `sm`.
+- Long platform lists wrap.
+
+**Example usage:**
 
 ```tsx
-const release = gameReleases.find((item) => item.id === "release-aether-2026")!;
-const game = getGameById(release.gameId)!;
+import { GameReleaseCard } from "@/components/games/game-release-card";
+import { gameReleases, games, platforms } from "@/data";
 
-<ReleaseCard
-  game={game}
-  release={release}
-  badgeLabel="Out now"
-  tone="success"
-/>;
+const release = gameReleases[0];
+const game = release
+  ? games.find((candidate) => candidate.id === release.gameId)
+  : undefined;
+
+if (!release || !game) return null;
+
+const releasePlatforms = platforms.filter((platform) =>
+  release.platformIds.includes(platform.id),
+);
+
+return (
+  <GameReleaseCard
+    game={game}
+    release={release}
+    platforms={releasePlatforms}
+    badgeLabel="Out now"
+    showSummary
+  />
+);
 ```
 
-Acceptance criteria:
+**Homepage replacement target:**
+`src/components/home/releasing-today-section.tsx`, replacing the inline
+`<li>` card contents inside `releasingToday.map(...)`. The parent keeps the list
+and data selection.
 
+**Acceptance criteria:**
+
+- Uses the existing domain interfaces unchanged.
 - Supports exact and imprecise release windows.
-- Does not mutate or re-sort source arrays.
-- Does not duplicate date-formatting logic.
+- Does not import `games`, `gameReleases`, or `platforms`.
+- Does not duplicate date formatting.
+- Link-free usage contains no fake affordance.
+- Passes strict TypeScript and remains visually compatible with the current
+  responsive grid.
 
-### 7. Calendar event card
+### 2. NewsCard
 
-**File:** `src/components/calendar/calendar-event-card.tsx`
+**Filename:** `src/components/news/news-card.tsx`
 
-```ts
-import type { CalendarEvent } from "@/types";
-
-export interface CalendarEventCardProps {
-  event: CalendarEvent;
-  tone?: "neutral" | "success" | "warning" | "rumor";
-  className?: string;
-}
-```
-
-Requirements:
-
-- Render `<article>`, `<time dateTime>`, title, description, and `StatusPill`.
-- Derive the visible default label from `event.type`.
-- Use `formatDate`; do not introduce component-local date formatting.
-- Preserve Claude's stacked-mobile and row-desktop behavior.
-
-Later replaces:
-
-- The `<article>` inside `upcoming.map(...)` in
-  `src/components/home/release-calendar-section.tsx`.
-
-Example:
-
-```tsx
-const event = calendarEvents.find(
-  (item) => item.id === "event-aether-release",
-)!;
-
-<CalendarEventCard event={event} tone="success" />;
-```
-
-Acceptance criteria:
-
-- Uses `CalendarEvent` unchanged.
-- Maintains valid list/article nesting.
-- Date, heading, and status remain readable at 320 px width.
-
-### 8. Favorite feed item card
-
-**File:** `src/components/home/feed-item-card.tsx`
+**Purpose:** Present a news article consistently in homepage feeds and future
+news listings, with optional credibility context.
 
 ```ts
-import type { Favorite, Game, NewsArticle } from "@/types";
-
-export type FeedItemSource =
-  { kind: "game"; game: Game } | { kind: "article"; article: NewsArticle };
-
-export interface FeedItemCardProps {
-  favorite: Favorite;
-  source: FeedItemSource;
-  className?: string;
-}
-```
-
-Requirements:
-
-- Derive the label, title, and excerpt from the discriminated `source`.
-- Reuse `StatusPill` and `formatDate`.
-- Render the favorite timestamp with `<time dateTime>`.
-- Return no navigation affordance until a real detail route exists.
-
-Later replaces:
-
-- The anonymous flattened feed object and repeated `<article>` inside
-  `feedItems.map(...)` in
-  `src/components/home/personalized-feed-section.tsx`.
-
-Examples:
-
-```tsx
-const favorite = favorites.find((item) => item.id === "favorite-aether")!;
-const game = getGameById(favorite.targetId)!;
-
-<FeedItemCard favorite={favorite} source={{ kind: "game", game }} />;
-```
-
-```tsx
-const favorite = favorites.find(
-  (item) => item.id === "favorite-morrowdeep-report",
-)!;
-const article = getArticleById(favorite.targetId)!;
-
-<FeedItemCard favorite={favorite} source={{ kind: "article", article }} />;
-```
-
-Acceptance criteria:
-
-- Exhaustive TypeScript narrowing handles both source variants.
-- No `any`, type assertions, or duplicated domain models.
-- Game and article layouts remain visually aligned.
-
-### 9. Release filter group
-
-**File:** `src/components/games/release-filter-group.tsx`
-
-```ts
-export interface ReleaseFilterOption {
-  id: string;
-  label: string;
-  color?: string;
-}
-
-export interface ReleaseFilterGroupProps {
-  legend: string;
-  options: readonly ReleaseFilterOption[];
-  selectionMode: "single" | "multiple";
-  selectedValues: ReadonlySet<string>;
-  onValueChange: (value: string, selected: boolean) => void;
-  name?: string;
-  className?: string;
-}
-```
-
-Requirements:
-
-- This is an interactive Client Component.
-- Render a `<fieldset>` and `<legend>`.
-- Use radio inputs for `single` and checkboxes for `multiple`.
-- Require `name` for single-selection groups.
-- Decorative option dots use `color` and `aria-hidden`.
-
-Later replaces:
-
-- The four repeated fieldsets in
-  `src/components/games/release-filters.tsx`.
-
-Examples:
-
-```tsx
-<ReleaseFilterGroup
-  legend="Platforms"
-  selectionMode="multiple"
-  selectedValues={new Set(["platform-pc"])}
-  onValueChange={() => undefined}
-  options={platforms.map((platform) => ({
-    id: platform.id,
-    label: platform.shortName,
-    color: platform.color,
-  }))}
-/>
-```
-
-```tsx
-<ReleaseFilterGroup
-  legend="Status"
-  selectionMode="multiple"
-  selectedValues={new Set<GameStatus>()}
-  onValueChange={() => undefined}
-  options={[
-    { id: "announced", label: "Announced" },
-    { id: "early-access", label: "Early access" },
-  ]}
-/>
-```
-
-Acceptance criteria:
-
-- Labels activate their associated inputs.
-- Single and multiple selection are keyboard operable.
-- Controlled state is owned by `ReleaseFilters`.
-- The component does not know about global mock data.
-
-### 10. Icon action
-
-**File:** `src/components/ui/icon-action.tsx`
-
-```ts
-import type {
-  ButtonHTMLAttributes,
-  ComponentPropsWithoutRef,
-  ReactNode,
-} from "react";
+import type { ComponentPropsWithoutRef } from "react";
 import type Link from "next/link";
 
-export interface IconButtonProps extends Omit<
-  ButtonHTMLAttributes<HTMLButtonElement>,
-  "children"
-> {
-  label: string;
-  icon: ReactNode;
-  indicatorLabel?: string;
-}
+import type { CredibilityAssessment, NewsArticle } from "@/types";
 
-export interface IconLinkProps extends Omit<
-  ComponentPropsWithoutRef<typeof Link>,
-  "children"
-> {
-  label: string;
-  icon: ReactNode;
+export type NewsCardVariant = "default" | "compact";
+
+export interface NewsCardProps {
+  article: NewsArticle;
+  assessment?: CredibilityAssessment;
+  href?: ComponentPropsWithoutRef<typeof Link>["href"];
+  variant?: NewsCardVariant;
+  showExcerpt?: boolean;
+  className?: string;
 }
 ```
 
-Requirements:
+**Existing shared types:** `NewsArticle` and `CredibilityAssessment`.
 
-- Export `IconButton` and `IconLink`.
-- Keep visible target dimensions at least 40×40 px.
-- Expose the accessible name through `label`.
-- A visual notification dot must have accessible text only when it conveys
-  meaningful state.
-- Do not absorb menu state or navigation logic into this primitive.
+**Required behavior:**
 
-Later replaces:
+- Render an `<article>` with category, title, optional excerpt, source, and
+  publication time.
+- Use `formatDate(article.publishedAt)`.
+- Render `CredibilityBadge` only when `assessment` is supplied.
+- Use `article.imageUrl` only through `next/image`; provide the dimensions or
+  `fill` sizing required to avoid layout shift.
+- Render a real Next.js link only when `href` is supplied.
+- `compact` must align with the current personalized-feed row treatment.
 
-- Compact search link and notification button in
-  `src/components/layout/site-header.tsx`.
-- Menu toggle button styling in
-  `src/components/layout/mobile-navigation.tsx`, while menu state stays in
-  `MobileNavigation`.
+**Accessibility:**
 
-Example:
+- Use a heading for the title.
+- Use `<time dateTime={article.publishedAt}>`.
+- Image alternative text must identify the story, or be empty when the image is
+  purely decorative beside an identical linked title.
+- Source and credibility text must not rely on color alone.
+- Linked titles require a visible `focus-ring`.
+
+**Responsive behavior:**
+
+- `compact` stacks at narrow widths and becomes a row at `sm`.
+- `default` works in one-, two-, and three-column parent grids.
+- Titles and source names wrap without clipping.
+- Images reserve space before loading.
+
+**Example usage:**
 
 ```tsx
-<IconLink href="/search" label="Search" icon={<SearchIcon />} />
+import { NewsCard } from "@/components/news/news-card";
+import { credibilityAssessments, newsArticles } from "@/data";
 
-<IconButton
-  label="Notifications"
-  icon={<BellIcon />}
-  indicatorLabel="Unread notifications"
-/>;
+const article = newsArticles[0];
+if (!article) return null;
+
+const assessment = credibilityAssessments.find(
+  (candidate) => candidate.articleId === article.id,
+);
+
+return (
+  <NewsCard
+    article={article}
+    assessment={assessment}
+    href={{ pathname: "/news", query: { article: article.slug } }}
+    variant="compact"
+    showExcerpt
+  />
+);
 ```
 
-Acceptance criteria:
+**Homepage replacement target:**
+`src/components/home/personalized-feed-section.tsx`, replacing the inline
+`<article>` presentation for the `"Saved story"` branch after the parent keeps
+the `Favorite` lookup and passes the resolved `NewsArticle`. It must not replace
+the followed-game branch.
 
-- Icon-only controls have an accessible name.
-- Decorative SVGs remain `aria-hidden`.
-- Button and link semantics are not interchangeable.
+**Acceptance criteria:**
+
+- Uses existing article and assessment types without local copies.
+- Does not import mock arrays.
+- Omits credibility UI cleanly when no assessment exists.
+- Uses `next/image` without layout shift when an image is present.
+- Preserves valid list/article nesting and keyboard-visible links.
+- Compact rendering matches the current feed rhythm without redesign.
+
+### 3. CredibilityBadge
+
+**Filename:** `src/components/credibility/credibility-badge.tsx`
+
+**Purpose:** Communicate a credibility verdict and optional numeric score with
+semantic text and the approved state palette.
+
+```ts
+import type { CredibilityAssessment, CredibilityVerdict } from "@/types";
+
+export type CredibilityBadgeSize = "sm" | "md";
+
+export interface CredibilityBadgeProps {
+  assessment: Pick<CredibilityAssessment, "score" | "verdict">;
+  label?: string;
+  showScore?: boolean;
+  size?: CredibilityBadgeSize;
+  className?: string;
+}
+
+export type CredibilityToneMap = Record<
+  CredibilityVerdict,
+  "success" | "warning" | "rumor" | "leak" | "destructive"
+>;
+```
+
+**Existing shared types:** `CredibilityAssessment` and
+`CredibilityVerdict`.
+
+**Required behavior:**
+
+- Derive the default visible label from `assessment.verdict`.
+- Show `assessment.score` only when `showScore` is true.
+- Clamp no values and recalculate no scores; render the assessment received.
+- Use a module-level exhaustive verdict-to-tone map.
+- Use semantic state classes, never copied hex colors.
+- The component remains a Server Component.
+
+**Accessibility:**
+
+- Always include readable verdict text.
+- Never communicate the verdict through color alone.
+- If the score is shown, expose it as “{score} out of 100”.
+- Do not add `role="status"` because the badge is not a live update.
+
+**Responsive behavior:**
+
+- Remains readable without wrapping at standard card widths.
+- May wrap its label and score as one unit at 320 px.
+- `sm` is suitable for compact feed rows; `md` is suitable for default cards.
+
+**Example usage:**
+
+```tsx
+import { CredibilityBadge } from "@/components/credibility/credibility-badge";
+import { credibilityAssessments } from "@/data";
+
+const assessment = credibilityAssessments[0];
+if (!assessment) return null;
+
+return <CredibilityBadge assessment={assessment} showScore size="sm" />;
+```
+
+**Homepage replacement target:**
+There is no trustworthy standalone credibility badge in the current homepage
+to replace. During `NewsCard` integration, use it inside the saved-story
+presentation in `src/components/home/personalized-feed-section.tsx` instead of
+adding another inline verdict pill. Do not replace game or release status pills.
+
+**Acceptance criteria:**
+
+- All `CredibilityVerdict` values are handled exhaustively.
+- Verdict and score remain understandable without color.
+- Score output is accessible and bounded by the source model contract.
+- No client directive, effects, or local assessment logic.
+- `NewsCard` can compose it without circular imports.
+
+### 4. CountdownTimer
+
+**Filename:** `src/components/ui/countdown-timer.tsx`
+
+**Purpose:** Keep a release countdown current after hydration and provide a
+stable, accessible replacement for the hero's server-generated countdown text.
+
+```ts
+import type { ISODateString } from "@/types";
+
+export type CountdownTimerVariant = "days" | "detailed";
+
+export interface CountdownTimerProps {
+  targetDate: ISODateString;
+  variant?: CountdownTimerVariant;
+  expiredLabel?: string;
+  prefix?: string;
+  className?: string;
+}
+```
+
+**Existing shared types:** `ISODateString`.
+
+**Required behavior:**
+
+- This is a Client Component.
+- Calculate from `targetDate` only; do not import release fixtures.
+- `days` renders a whole-day label compatible with the existing hero.
+- `detailed` renders days, hours, minutes, and seconds.
+- Update at the minimum useful interval: once per minute for `days`, once per
+  second for `detailed`.
+- Clear the interval on unmount.
+- Render `expiredLabel` after the target time, defaulting to “Available now”.
+- Avoid hydration mismatch by rendering a deterministic initial fallback and
+  calculating live values after mount.
+
+**Accessibility:**
+
+- The visible countdown must have a concise accessible label.
+- Do not use an assertive live region.
+- For `detailed`, use `aria-live="polite"` no more frequently than once per
+  minute; seconds remain visual and `aria-hidden`.
+- Respect reduced motion; the timer must not animate digits.
+
+**Responsive behavior:**
+
+- `days` remains inline.
+- `detailed` wraps unit groups without overflow at 320 px.
+- Use tabular numerals to prevent layout jitter.
+
+**Example usage:**
+
+```tsx
+import { CountdownTimer } from "@/components/ui/countdown-timer";
+import { gameReleases } from "@/data";
+
+const release = gameReleases.find((candidate) => candidate.releaseDate);
+if (!release?.releaseDate) return null;
+
+return (
+  <CountdownTimer
+    targetDate={release.releaseDate}
+    variant="days"
+    prefix="Releasing in"
+  />
+);
+```
+
+**Homepage replacement target:**
+`src/components/home/hero-carousel.tsx`, replacing the inline countdown
+`<dd>{activeItem.countdownLabel}</dd>`. The Lead Engineer must first add the
+exact release date to `HeroCarouselItem` in
+`src/components/home/featured-release-hero.tsx`; Kimi must not make that
+integration change.
+
+**Acceptance criteria:**
+
+- No hydration warning or invalid-date crash.
+- Intervals are cleaned up.
+- Expired dates produce the configured label.
+- Days and detailed variants are covered by unit tests using fake timers.
+- No fixture imports and no animation dependency.
+
+### 5. SkeletonCard
+
+**Filename:** `src/components/ui/skeleton-card.tsx`
+
+**Purpose:** Provide a reusable, layout-stable loading placeholder matching the
+release and news card geometries.
+
+```ts
+export type SkeletonCardVariant = "game-release" | "news";
+
+export interface SkeletonCardProps {
+  variant?: SkeletonCardVariant;
+  compact?: boolean;
+  ariaLabel?: string;
+  className?: string;
+}
+```
+
+**Existing shared types:** None. This is a UI primitive and must not duplicate
+domain models.
+
+**Required behavior:**
+
+- Render one placeholder `<article>` per component instance.
+- Match the final card's approximate image, heading, metadata, and body blocks
+  to minimize layout shift.
+- Use only `bg-surface`, `bg-surface-elevated`, and `border-border`.
+- Do not add a dependency.
+- Any pulse effect must be disabled for reduced-motion users.
+
+**Accessibility:**
+
+- Default `ariaLabel` to “Loading content”.
+- Set `aria-busy="true"` on the placeholder.
+- Mark decorative skeleton bars `aria-hidden="true"`.
+- Do not expose fake headings, dates, or links to assistive technology.
+
+**Responsive behavior:**
+
+- Match `GameReleaseCard` and `NewsCard` width behavior.
+- `compact` stacks at narrow widths and becomes row-shaped at `sm`.
+- Never set a fixed width that can overflow a 320 px viewport.
+
+**Example usage:**
+
+```tsx
+import { SkeletonCard } from "@/components/ui/skeleton-card";
+
+return (
+  <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+    {Array.from({ length: 3 }, (_, index) => (
+      <li key={index}>
+        <SkeletonCard variant="game-release" />
+      </li>
+    ))}
+  </ul>
+);
+```
+
+**Homepage replacement target:**
+The homepage currently has no inline loading skeleton to replace. Its first
+integration point is a future Suspense fallback around the release/news blocks
+owned by `src/components/home/home-page.tsx`. Do not replace the permanent
+placeholder artwork in `anticipated-games-section.tsx`; that element represents
+missing artwork, not loading state.
+
+**Acceptance criteria:**
+
+- Geometry is compatible with both card variants.
+- No fake semantic content is announced.
+- Reduced-motion users receive no pulsing animation.
+- No fixed-width overflow or cumulative layout shift is introduced.
+- Multiple instances remain the parent's responsibility.
+
+## Inline UI inventory for later batches
+
+The repository review found these additional reusable patterns. They are not
+part of Kimi's first five-file batch:
+
+| Inline pattern                              | Current location                                                  | Later component candidate                        |
+| ------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------ |
+| Section eyebrow/title/description/action    | `src/components/home/section-heading.tsx` and five sections       | `src/components/ui/section-heading.tsx`          |
+| Primary, secondary, ghost, and icon actions | Hero, CTA, header, section actions, filters                       | `Button`, `ButtonLink`, `IconButton`, `IconLink` |
+| Genre/platform pills with optional counts   | Hero, anticipated games, trending tags                            | `TagChip`                                        |
+| Platform dot-and-label lists                | Hero and anticipated games                                        | `PlatformBadges`                                 |
+| Anticipated game article                    | `anticipated-games-section.tsx`                                   | `GameCard`                                       |
+| Calendar event row                          | `release-calendar-section.tsx`                                    | `CalendarEventCard`                              |
+| Followed-game feed row                      | `personalized-feed-section.tsx`                                   | `FeedItemCard`                                   |
+| Repeated radio/checkbox fieldsets           | `release-filters.tsx`                                             | `ReleaseFilterGroup`                             |
+| Empty-state surface                         | `releasing-today-section.tsx` and `personalized-feed-section.tsx` | `EmptyState`                                     |
+| Repeated card shell                         | Release, calendar, feed, and anticipated sections                 | `Card` or shared card class contract             |
 
 ## Files Kimi must not modify
 
-Kimi should add only the ten component files listed above. In particular, do
-not modify:
+Kimi should add only these five files:
+
+- `src/components/games/game-release-card.tsx`
+- `src/components/news/news-card.tsx`
+- `src/components/credibility/credibility-badge.tsx`
+- `src/components/ui/countdown-timer.tsx`
+- `src/components/ui/skeleton-card.tsx`
+
+Kimi must not modify:
 
 - `package.json`, `pnpm-lock.yaml`, or `pnpm-workspace.yaml`
 - `next.config.ts`, `tsconfig.json`, `eslint.config.mjs`,
   `postcss.config.mjs`, or `.prettierrc.json`
-- `.env.example`, `.gitignore`, or `README.md`
+- `.env.example`, `.gitignore`, `README.md`, or any file under `docs/`
 - Any file under `src/app/`
 - Any file under `src/data/`, `src/types/`, `src/lib/`, or `src/styles/`
-- Existing layout components, including `site-header.tsx`,
-  `mobile-navigation.tsx`, and `page-container.tsx`
-- Existing homepage components, including `hero-carousel.tsx` and all section
-  components
+- Existing files under `src/components/home/`, `src/components/layout/`,
+  `src/components/games/`, `src/components/news/`,
+  `src/components/credibility/`, or `src/components/ui/`
 
-If a required prop cannot be expressed with the existing domain types, report
-the issue in the handoff rather than modifying `src/types`.
+The five new files may import one another only in this direction:
+`NewsCard` may import `CredibilityBadge`; no other circular dependency is
+allowed.
+
+If a requirement cannot be expressed with existing types or tokens, report it
+in the handoff rather than changing an owned file.
 
 ## Global acceptance criteria
 
-Kimi's contribution is acceptable when:
+Kimi's batch is acceptable when:
 
-1. All ten required files exist at the exact paths above.
-2. Every public props type is exported.
-3. Components use strict TypeScript without `any`, `@ts-ignore`, non-null
-   assertions in implementation code, or duplicated domain interfaces.
-4. Components use semantic theme classes and introduce no copied theme hex
-   values.
-5. Presentational components receive data via props and do not import mock
+1. All five files exist at the exact paths above.
+2. Every public prop and variant type is exported.
+3. Strict TypeScript passes without `any`, `@ts-ignore`, duplicated domain
+   interfaces, or unsafe assertions.
+4. Presentational components receive data through props and import no mock
    arrays.
-6. Interactive components preserve native keyboard behavior and visible focus.
-7. Components remain responsive at 320 px, 768 px, and desktop widths.
-8. No dependency or configuration changes are made.
-9. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and
-   `pnpm build` pass.
-10. Kimi's handoff lists every created file and any integration assumption.
+5. Semantic theme classes replace copied theme colors.
+6. Native link, time, heading, and article semantics are preserved.
+7. Interactive behavior is keyboard operable and focus remains visible.
+8. Components work at 320 px, 768 px, and desktop widths.
+9. Countdown tests cover future and expired dates with fake timers.
+10. `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, and
+    `pnpm build` pass without configuration or dependency changes.

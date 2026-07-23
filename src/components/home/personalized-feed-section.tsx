@@ -41,6 +41,7 @@ export function PersonalizedFeedSection() {
   return (
     <section aria-labelledby="personalized-feed-heading">
       <SectionHeading
+        headingId="personalized-feed-heading"
         eyebrow="For you"
         title="Personalized feed"
         description="A preview of what your feed looks like once you follow games and save stories."
