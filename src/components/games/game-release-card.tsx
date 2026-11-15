@@ -61,7 +61,7 @@ export function GameReleaseCard({
           {badgeLabel ?? release.status.replace("-", " ")}
         </StatusPill>
 
-        <h3 className="mt-3 min-w-0 text-lg font-bold break-words text-balance">
+        <h3 className="mt-3 min-w-0 text-lg font-bold text-balance break-words">
           {title}
         </h3>
 

@@ -93,7 +93,7 @@ export function NewsCard({
           </time>
         </div>
 
-        <h3 className="mt-4 min-w-0 text-lg font-bold break-words text-balance">
+        <h3 className="mt-4 min-w-0 text-lg font-bold text-balance break-words">
           {title}
         </h3>
 
@@ -108,7 +108,7 @@ export function NewsCard({
             Source:{" "}
             <a
               href={article.sourceUrl}
-              className="focus-ring rounded-sm font-semibold text-foreground underline-offset-2 hover:underline"
+              className="focus-ring text-foreground rounded-sm font-semibold underline-offset-2 hover:underline"
             >
               {article.sourceName}
             </a>
